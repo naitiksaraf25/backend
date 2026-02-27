@@ -58,16 +58,18 @@ function initDB() {
     );
   `);
 
-  // Seed if empty
+  // ✅ Hamesha default users ensure karo (Railway pe DB reset hota hai)
+  ensureDefaultUsers();
+
+  // Seed complaints only if empty
   const count = db.prepare('SELECT COUNT(*) as c FROM complaints').get();
   if (count.c === 0) {
-    seedData();
+    seedComplaints();
   }
 }
 
-function seedData() {
-  console.log('[SEED] Seeding initial complaints...');
-
+// ✅ Yeh function har restart pe chalta hai — demo users hamesha rahenge
+function ensureDefaultUsers() {
   const adminHash = bcrypt.hashSync('admin123', 10);
   const userHash  = bcrypt.hashSync('citizen123', 10);
 
@@ -77,9 +79,14 @@ function seedData() {
   `);
   insertUser.run('Admin NagarSeva', 'admin@nagarseva.in', adminHash, 'admin');
   insertUser.run('Ramesh Kumar',    'ramesh@gmail.com',   userHash,  'citizen');
+  console.log('[SEED] Default users ensured: admin@nagarseva.in, ramesh@gmail.com');
+}
 
-  const adminId   = db.prepare("SELECT id FROM users WHERE email='admin@nagarseva.in'").get().id;
-  const citizenId = db.prepare("SELECT id FROM users WHERE email='ramesh@gmail.com'").get().id;
+function seedComplaints() {
+  console.log('[SEED] Seeding initial complaints...');
+
+  const citizenId = db.prepare("SELECT id FROM users WHERE email='ramesh@gmail.com'").get()?.id;
+  if (!citizenId) return;
 
   const insertComplaint = db.prepare(`
     INSERT INTO complaints (title, category, description, location, priority, status, citizen_name, user_id)
